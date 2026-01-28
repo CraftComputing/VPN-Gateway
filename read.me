@@ -1,0 +1,144 @@
+VPN Gateway w/ Kill Switch
+Instructions for Ubuntu 24.04.3 Server
+
+Steps:
+- Install Ubuntu Server 24.04
+- apt-get update | apt-get upgrade
+- Install packages (openvpn, openssh-server, unzip)
+- Setup static IP address
+- Configure connect.sh script
+- Configure auth.txt
+- Configure iptables.sh
+- Create start.sh script
+- Create vpngateway.service
+- Configure vpngateway.service
+- Enable vpngateway.service
+
+-- Install Ubuntu Server 24.04 --
+
+Download the latest Ubuntu Server 24.04 and install onto your system of choice.
+
+Configure the server with a Static IP address.
+
+Once installation is complete, run:
+
+sudo apt update
+sudo apt upgrade
+reboot
+
+
+-- Install Packages --
+
+Install required applications for this process.
+
+sudo apt install openvpn openssh-server unzip ca-certificates
+
+For this example, we'll be connecting to NordVPN.
+Download NordVPN OpenVPN configuration files from their website, then unzip the package.
+
+cd /etc/openvpn
+sudo wget https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip
+sudo unzip ovpn.zip
+
+
+-- Configure connect.sh script --
+
+This is the script responsible for connecting via OpenVPN. It uses a pre-built OpenVPN configuration file from your VPN provider, and reads user credentials from auth.txt.
+
+Create connect.sh by typing:
+sudo nano /etc/openvpn/connect.sh
+
+Paste the following line into the file:
+sudo openvpn --config "/etc/openvpn/ovpn_udp/cc####.nordvpn.com.udp.ovpn" --auth-user-pass /etc/openvpn/auth.txt
+
+Replace *cc####* with the VPN Server you want to connect to. If you have a NordVPN account already, there is a Recommended Server Wizard on your account page:
+https://my.nordaccount.com/dashboard/nordvpn/manual-configuration/server-recommendation/
+
+Save and exit the file.
+
+Make connect.sh executable by typing:
+sudo chmod +x /etc/openvpn/connect.sh
+
+
+-- Configure auth.txt --
+
+Create auth.txt by typing:
+sudo nano /etc/openvpn/auth.txt
+
+Enter your credentials on the first two lines. User on line 1, Password on line 2.
+
+Note, for NordVPN, you'll need to use your Service Credentials, not your app login information. This can be found on your account page:
+https://my.nordaccount.com/dashboard/nordvpn/manual-configuration/service-credentials/
+
+When completed, save and exit the file.
+
+
+-- Configure iptables.sh --
+
+The iptables.sh script establishes Firewall Rules that only allow traffic in and out of the VPN Gateway via Port #1194. All other external traffic is dropped.
+
+Create iptables.sh by typing:
+sudo nano /etc/openvpn/iptables.sh
+
+Paste in the contents of iptables.sh, found in this repository.
+
+You will need to modify two lines to allow your VPN Gateway to communicate with your local LAN.
+
+# Make sure that you can communicate within your own network
+iptables -A INPUT -s #.#.#.#/XX -d #.#.#.#/XX -j ACCEPT
+iptables -A OUTPUT -s #.#.#.#/XX -d #.#.#.#/XX -j ACCEPT
+
+Repace each instance of #.#.#.#/XX with your own LAN subnet. For example:
+
+# Make sure that you can communicate within your own network
+iptables -A INPUT -s 192.168.1.0/24 -d 192.168.1.0/24 -j ACCEPT
+iptables -A OUTPUT -s 192.168.1.0/24 -d 192.168.1.0/24 -j ACCEPT
+
+When completed, save and exit the file.
+
+Make iptables.sh executable by typing:
+sudo chmod +x /etc/openvpn/iptables.sh
+
+
+-- Create start.sh script --
+
+The start.sh script runs the previously created scripts, as well as enabling packet forwarding from LAN devices.
+
+Create start.sh by typing:
+sudo nano /etc/openvpn/start.sh
+
+Paste in the following:
+
+#!/bin/sh -e
+sudo bash /etc/openvpn/iptables.sh &
+sleep 10
+sudo sh -c "echo 1 > /proc/sys/net/ipv4/ip_forward"
+sudo bash /etc/openvpn/connect.sh &
+exit 0
+
+When completed, save and exit the file.
+
+Make start.sh executable by typing:
+sudo chmod +x /etc/openvpn/start.sh
+
+
+-- Create vpngateway.service --
+
+The vpngateway.service file will automatically run the scripts created above. At system boot, it will execute start.sh, which will establish Firewall Rules (iptables.sh), pause for 10 seconds to ensure the rules were properly applied, enable packet forwarding to route all received traffic through the VPN, and finally Connect to your configured VPN (connect.sh).
+
+Create vpngateway.service by typing:
+sudo nano /etc/systemd/system/vpngateway.service
+
+Paste in the contents of vpngateway.service, found in this repository.
+
+When completed, save and exit the file.
+
+To run the VPN Gateway at system boot, enable the service by typing:
+sudo systemctl enable vpngateway
+
+You can check the status of the service, start or stop it by typing the following:
+sudo systemctl status vpngateway.service
+sudo systemctl start vpngateway.service
+sudo systemctl stop vpngateway.service
+
+-- END --
