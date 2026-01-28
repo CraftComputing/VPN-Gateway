@@ -141,4 +141,14 @@ sudo systemctl status vpngateway.service
 sudo systemctl start vpngateway.service
 sudo systemctl stop vpngateway.service
 
+
+-- Use the Gateway --
+
+To connect any device through the VPN Gateway, assign the device's Default Gateway address to this server's static IP. Any traffic received will be forwarded through the VPN.
+
+The Firewall Rules also double as a killswitch, should the VPN disconnect for any reason. Only traffic on Port #1194 can leave the Local LAN, so when the VPN disconnects, traffic from local clients is halted.
+
+If the VPN Gateway is rebooted, packet forwarding is disabled until Firewall Rules have been re-applied. These steps ensure no traffic passes through the Gateway unless the VPN is Active.
+
+
 -- END --
