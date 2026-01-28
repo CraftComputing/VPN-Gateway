@@ -1,0 +1,16 @@
+[Unit]
+Description=/etc/openvpn/start.sh
+ConditionPathExists=/etc/openvpn/start.sh
+
+
+[Service]
+Type=forking
+ExecStart=/etc/openvpn/start.sh start
+TimeoutSec=0
+StandardOutput=tty
+RemainAfterExit=yes
+SysVStartPriority=99
+
+
+[Install]
+WantedBy=multi-user.target
