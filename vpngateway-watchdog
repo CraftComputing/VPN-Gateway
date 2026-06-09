@@ -1,0 +1,74 @@
+Create vpngateway-watchdog.sh
+sudo nano /usr/local/bin/vpngateway-watchdog.sh
+
+--START--
+
+#!/bin/bash
+
+REMOTE_IP="8.8.8.8"
+SERVICE="vpngateway.service"
+STATEFILE="/var/lib/vpngateway-watchdog.failcount"
+
+FAILS=$(cat "$STATEFILE" 2>/dev/null || echo 0)
+
+if ping -c 3 -W 5 "$REMOTE_IP" >/dev/null 2>&1; then
+    echo 0 > "$STATEFILE"
+    exit 0
+fi
+
+FAILS=$((FAILS + 1))
+echo "$FAILS" > "$STATEFILE"
+
+if [ "$FAILS" -ge 3 ]; then
+    logger -t vpngateway-watchdog "3 consecutive ping failures. Restarting ${SERVICE}"
+    systemctl restart "$SERVICE"
+    echo 0 > "$STATEFILE"
+fi
+
+--END--
+
+Make the file executable
+sudo chmod +x /usr/local/bin/vpngateway-watchdog.sh
+
+Create a systemd service
+sudo nano /etc/systemd/system/vpngateway-watchdog.timer
+
+--START--
+
+[Unit]
+Description=Run VPN Gateway Watchdog every minute
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=60s
+Unit=vpngateway-watchdog.service
+
+[Install]
+WantedBy=timers.target
+
+--END--
+
+Create a systemd timer
+sudo nano /etc/systemd/system/vpngateway-watchdog.timer
+
+--START--
+
+[Unit]
+Description=Run VPN Gateway Watchdog every minute
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=60s
+Unit=vpngateway-watchdog.service
+
+[Install]
+WantedBy=timers.target
+
+--END--
+
+Enable the timer
+sudo systemctl daemon-reload
+sudo systemctl enable --now vpngateway-watchdog.timer
+
+Verify it's running
+systemctl status vpngateway-watchdog.timer
