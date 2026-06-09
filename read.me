@@ -151,4 +151,8 @@ The Firewall Rules also double as a killswitch, should the VPN disconnect for an
 If the VPN Gateway is rebooted, packet forwarding is disabled until Firewall Rules have been re-applied. These steps ensure no traffic passes through the Gateway unless the VPN is Active.
 
 
+-- Optional --
+
+I have created an additional service to automatically restart the vpngateway, should you become disconnected. This works in additional to the killswitch, so no traffic is leaked during moments of disconnect. See the watchdog-vpngateway file in this repo for instructions on setting this up.
+
 -- END --
