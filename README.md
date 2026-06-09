@@ -15,7 +15,7 @@ Steps:
 - Enable vpngateway.service
 - OPTIONAL - Enable watchdog service
 
--- Install Ubuntu Server 24.04 --
+#Install Ubuntu Server 24.04
 
 Download the latest Ubuntu Server 24.04 and install onto your system of choice.
 
@@ -28,7 +28,7 @@ sudo apt upgrade
 reboot
 
 
--- Install Packages --
+#Install Packages
 
 Install required applications for this process.
 
@@ -42,7 +42,7 @@ sudo wget https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip
 sudo unzip ovpn.zip
 
 
--- Configure connect.sh script --
+#Configure connect.sh script
 
 This is the script responsible for connecting via OpenVPN. It uses a pre-built OpenVPN configuration file from your VPN provider, and reads user credentials from auth.txt.
 
@@ -61,7 +61,7 @@ Make connect.sh executable by typing:
 sudo chmod +x /etc/openvpn/connect.sh
 
 
--- Configure auth.txt --
+#Configure auth.txt
 
 Create auth.txt by typing:
 sudo nano /etc/openvpn/auth.txt
@@ -74,7 +74,7 @@ https://my.nordaccount.com/dashboard/nordvpn/manual-configuration/service-creden
 When completed, save and exit the file.
 
 
--- Configure iptables.sh --
+#Configure iptables.sh
 
 The iptables.sh script establishes Firewall Rules that only allow traffic in and out of the VPN Gateway via Port #1194. All other external traffic is dropped.
 
@@ -85,13 +85,13 @@ Paste in the contents of iptables.sh, found in this repository.
 
 You will need to modify two lines to allow your VPN Gateway to communicate with your local LAN.
 
-# Make sure that you can communicate within your own network
+Make sure that you can communicate within your own network
 iptables -A INPUT -s #.#.#.#/XX -d #.#.#.#/XX -j ACCEPT
 iptables -A OUTPUT -s #.#.#.#/XX -d #.#.#.#/XX -j ACCEPT
 
 Repace each instance of #.#.#.#/XX with your own LAN subnet. For example:
 
-# Make sure that you can communicate within your own network
+Make sure that you can communicate within your own network
 iptables -A INPUT -s 192.168.1.0/24 -d 192.168.1.0/24 -j ACCEPT
 iptables -A OUTPUT -s 192.168.1.0/24 -d 192.168.1.0/24 -j ACCEPT
 
@@ -101,7 +101,7 @@ Make iptables.sh executable by typing:
 sudo chmod +x /etc/openvpn/iptables.sh
 
 
--- Create start.sh script --
+#Create start.sh script
 
 The start.sh script runs the previously created scripts, as well as enabling packet forwarding from LAN devices.
 
@@ -123,7 +123,7 @@ Make start.sh executable by typing:
 sudo chmod +x /etc/openvpn/start.sh
 
 
--- Create vpngateway.service --
+#Create vpngateway.service
 
 The vpngateway.service file will automatically run the scripts created above. At system boot, it will execute start.sh, which will establish Firewall Rules (iptables.sh), pause for 10 seconds to ensure the rules were properly applied, enable packet forwarding to route all received traffic through the VPN, and finally Connect to your configured VPN (connect.sh).
 
@@ -143,7 +143,7 @@ sudo systemctl start vpngateway.service
 sudo systemctl stop vpngateway.service
 
 
--- Use the Gateway --
+#Use the Gateway
 
 To connect any device through the VPN Gateway, assign the device's Default Gateway address to this server's static IP. Any traffic received will be forwarded through the VPN.
 
@@ -152,8 +152,6 @@ The Firewall Rules also double as a killswitch, should the VPN disconnect for an
 If the VPN Gateway is rebooted, packet forwarding is disabled until Firewall Rules have been re-applied. These steps ensure no traffic passes through the Gateway unless the VPN is Active.
 
 
--- Optional --
+#Optional
 
 I have created an additional service to automatically restart the vpngateway, should you become disconnected. This works in additional to the killswitch, so no traffic is leaked during moments of disconnect. See the 'vpngateway-watchdog' file in this repo for instructions on setting this up.
-
--- END --
