@@ -1,3 +1,13 @@
+These instructions are for creating a watchdog service for the VPN Gateway.
+The service will ping 8.8.8.8 (or whatever remote IP you choose).
+If the ping fails multiple times in a row (roughly 3 minutes), the service
+will automatically restart the vpngateway.service.
+
+These instructions were partially coded by ChatGPT, but verified by me.
+
+
+
+
 Create vpngateway-watchdog.sh
 sudo nano /usr/local/bin/vpngateway-watchdog.sh
 
