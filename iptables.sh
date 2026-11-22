@@ -33,7 +33,9 @@ iptables -t nat -A POSTROUTING -o tun+ -j MASQUERADE
 iptables -A OUTPUT -o tun+ -j ACCEPT
 
 # allow VPN connection
-iptables -I OUTPUT 1 -p udp --destination-port 1194 -m comment --comment "Allow VPN connection" -j ACCEPT
+iptables -I OUTPUT 1 -p udp --dport 1194 -j ACCEPT
+iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
+iptables -A OUTPUT -p tcp --dport 53 -j ACCEPT
 
 # Block All
 iptables -A OUTPUT -j DROP
@@ -47,6 +49,9 @@ iptables -A INPUT -j logging
 iptables -A OUTPUT -j logging
 iptables -A logging -m limit --limit 2/min -j LOG --log-prefix "IPTables general: " --log-level 7
 iptables -A logging -j DROP
+
+#Enable forwarding in Ubuntu
+sysctl -w net.ipv4.ip_forward=1
 
 echo "saving"
 iptables-save > /etc/iptables.rules
